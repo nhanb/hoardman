@@ -12,6 +12,8 @@ def fetch(conn, url):
     except requests.Timeout:
         print(f"Timed out: {url}")
 
+    assert resp.status_code == 200, f"{url} failed: {resp.status_code}"
+
     with conn:
         conn.execute(
             """
