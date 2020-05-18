@@ -2,19 +2,13 @@ import time
 
 import requests
 
+import httpclient
 import jobqueue
-
-session = requests.Session()
-session.headers.update(
-    {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko"
-    }
-)
 
 
 def fetch(conn, url):
     try:
-        resp = session.get(url, timeout=10)
+        resp = httpclient.proxied_get(url, timeout=10)
     except requests.Timeout:
         print(f"Timed out: {url}")
 
