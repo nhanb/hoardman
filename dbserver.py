@@ -87,13 +87,10 @@ class DbServerRequestHandler(BaseRequestHandler):
 
         assert len(bytedata) == size
 
-        print(f"Received size: {size}")
-
         data = json.loads(bytedata)
 
         func_module = data["func_module"]
         func_name = data["func_name"]
-        print(f"Function call: {func_module}.{func_name}")
         func = getattr(import_module(func_module), func_name)
         args = data["args"]
         kwargs = data["kwargs"]
@@ -101,8 +98,9 @@ class DbServerRequestHandler(BaseRequestHandler):
         resp = func(self.server.conn, *args, **kwargs)
         result = json.dumps(resp)
 
-        print("Sending result:", result)
         self.request.sendall(result.encode())
+
+        print(f"{size} {func_name}")
 
 
 class DbServer(UnixStreamServer):
