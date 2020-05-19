@@ -42,16 +42,16 @@ def already_fetched(cursor, manga_id: int):
 def put_fetch_jobs(conn, min_id, max_id):
     for chunk in chunks(range(min_id, max_id + 1), 10_000):
         payloads = ({"url": id_to_url(id_)} for id_ in chunk)
-        jobqueue.put_bulk(conn, "fetch", payloads)
+        jobqueue.put_bulk("fetch", payloads)
 
 
 def fetch_worker(conn):
     while True:
-        job = jobqueue.get(conn, "fetch")
+        job = jobqueue.get("fetch")
         if job is not None:
             job_id, payload = job
             fetch(conn, payload["url"])
-            jobqueue.finish(conn, job_id)
+            jobqueue.finish(job_id)
         else:
             time.sleep(5)
 
