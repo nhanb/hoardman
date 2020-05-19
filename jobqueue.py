@@ -26,7 +26,6 @@ SKIP LOCKED stuff. This one is way less sophisticated:
 def _get(conn: sqlite3.Connection, queue_name: str, pid):
     with conn:
         c = conn.cursor()
-        c.execute("BEGIN EXCLUSIVE TRANSACTION;")
         c.execute(
             """
         SELECT id, payload
