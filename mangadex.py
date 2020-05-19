@@ -1,17 +1,11 @@
 import time
 
-import requests
-
 import httpclient
 import jobqueue
 
 
 def fetch(conn, url):
-    try:
-        resp = httpclient.proxied_get(url, timeout=10)
-    except requests.Timeout:
-        print(f"Timed out: {url}")
-
+    resp = httpclient.proxied_get(url, timeout=10)
     assert resp.status_code == 200, f"{url} failed: {resp.status_code}"
 
     with conn:
