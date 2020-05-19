@@ -40,7 +40,6 @@ def _get(conn: sqlite3.Connection, queue_name: str, pid):
         )
         result = c.fetchone()
         if result is None:
-            print("No pending job found.")
             return None
 
         job_id, payload = result
@@ -49,7 +48,6 @@ def _get(conn: sqlite3.Connection, queue_name: str, pid):
             (pid, job_id),
         )
 
-    print("Started job", job_id, payload)
     return job_id, json.loads(payload)
 
 
@@ -58,7 +56,6 @@ def _finish(conn, job_id):
         c = conn.cursor()
         c.execute("DELETE FROM queue WHERE id = ?;", (job_id,))
         assert c.rowcount == 1, c.rowcount
-    print(f"Finished job {job_id}")
 
 
 def _put_bulk(conn, queue_name, payloads):
@@ -87,8 +84,7 @@ def _release_jobs_from_dead_workers(conn):
     orphaned_job_ids = tuple(job_id for job_id, pid in results if not _is_alive(pid))
 
     if not orphaned_job_ids:
-        print("Nothing to release.")
-        return
+        return 0
 
     with conn:
         c = conn.cursor()
@@ -102,7 +98,7 @@ def _release_jobs_from_dead_workers(conn):
             """,
             orphaned_job_ids,
         )
-        print("Released", c.rowcount, "jobs")
+        return c.rowcount
 
 
 def _is_alive(pid: int):

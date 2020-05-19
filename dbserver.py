@@ -70,10 +70,9 @@ class DbServerRequestHandler(BaseRequestHandler):
         bytedata = self.request.recv(1048576)
         data = json.loads(bytedata)
 
-        print("Received function call:", data)
-
         func_module = data["func_module"]
         func_name = data["func_name"]
+        print(f"Received function call: {func_module}.{func_name}")
         func = getattr(import_module(func_module), func_name)
         args = data["args"]
         kwargs = data["kwargs"]
