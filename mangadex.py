@@ -6,11 +6,17 @@ import jobqueue
 
 
 def fetch(conn, url):
-    start = dt.now()
-    resp = httpclient.proxied_get(url, timeout=100)
-    duration = (dt.now() - start).total_seconds()
-    print(f"Request time: {duration}s")
+    status_code = -1
+    total_start = dt.now()
+    while status_code != 200:
+        start = dt.now()
+        resp = httpclient.proxied_get(url, timeout=100)
+        duration = (dt.now() - start).total_seconds()
+        print(f"Request time: {duration}s")
+        status_code = resp.status_code
     assert resp.status_code == 200, f"{url} failed: {resp.status_code}"
+    total_duration = (dt.now() - total_start).total_seconds()
+    print(f"Request time (total): {total_duration}s")
 
     with conn:
         conn.execute(
