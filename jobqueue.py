@@ -1,12 +1,8 @@
 import json
 import os
-import socket
 import sqlite3
-from socketserver import BaseRequestHandler, UnixStreamServer
 
-from persistence import get_conn
-
-SOCKET = "server.socket"
+from dbserver import via_dbserver
 
 
 """
@@ -119,63 +115,7 @@ def _is_alive(pid: int):
         return True
 
 
-def get(queue_name):
-    return request("get", {"queue_name": queue_name, "pid": os.getpid()})
-
-
-def put_bulk(queue_name, payloads):
-    return request("put_bulk", {"queue_name": queue_name, "payloads": payloads})
-
-
-def finish(job_id):
-    return request("finish", {"job_id": job_id})
-
-
-def release_jobs_from_dead_workers():
-    return request("release_jobs_from_dead_workers", {})
-
-
-def request(action, params):
-    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    client.connect(SOCKET)
-    client.sendall(json.dumps({"action": action, "params": params}).encode())
-
-    resp = client.recv(1048576)
-    client.close()
-    return json.loads(resp.decode())
-
-
-class JobQueueRequestHandler(BaseRequestHandler):
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1048576)
-
-        data = json.loads(self.data)
-
-        action = data["action"]
-        action_func = globals().get("_" + action)
-
-        resp = action_func(self.server.conn, **data["params"])
-        result = json.dumps(resp)
-        self.request.sendall(result.encode())
-
-
-class JobQueueServer(UnixStreamServer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.conn = get_conn()
-        print(f"{self.__class__.__name__} up")
-
-
-def jobserver():
-    if os.path.exists(SOCKET):
-        os.remove(SOCKET)
-
-    with JobQueueServer(SOCKET, JobQueueRequestHandler) as server:
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        server.serve_forever()
-
-
-if __name__ == "__main__":
-    jobserver()
+get = via_dbserver(_get)
+put_bulk = via_dbserver(_put_bulk)
+release_jobs_from_dead_workers = via_dbserver(_release_jobs_from_dead_workers)
+finish = via_dbserver(_finish)
