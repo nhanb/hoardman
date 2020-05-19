@@ -1,11 +1,15 @@
 import time
+from datetime import datetime as dt
 
 import httpclient
 import jobqueue
 
 
 def fetch(conn, url):
-    resp = httpclient.proxied_get(url, timeout=10)
+    start = dt.now()
+    resp = httpclient.proxied_get(url, timeout=100)
+    duration = (dt.now() - start).total_seconds()
+    print(f"Request time: {duration}s")
     assert resp.status_code == 200, f"{url} failed: {resp.status_code}"
 
     with conn:
