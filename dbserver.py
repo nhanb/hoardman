@@ -59,6 +59,11 @@ def call_via_dbserver(func: Callable, *args, **kwargs):
         }
     ).encode()
 
+    # Makeshift Content-Length convention:
+    # first send payload size, then \n, then actual payload.
+    # Not doing this for the return trip yet because I don't have huge return values...
+    # for now.
+
     size = str(len(payload)).encode()
     client.sendall(size + b"\n")
     client.sendall(payload)
