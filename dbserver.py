@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+from datetime import datetime as dt
 from importlib import import_module
 from socketserver import BaseRequestHandler, UnixStreamServer
 from typing import Callable
@@ -44,22 +45,30 @@ def via_dbserver(func):
 
 
 def call_via_dbserver(func: Callable, *args, **kwargs):
+    start = dt.now()
+
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.connect(SOCKET)
-    client.sendall(
-        json.dumps(
-            {
-                "func_module": func.__module__,
-                "func_name": func.__name__,
-                "args": args,
-                "kwargs": kwargs,
-            }
-        ).encode()
-    )
 
+    payload = json.dumps(
+        {
+            "func_module": func.__module__,
+            "func_name": func.__name__,
+            "args": args,
+            "kwargs": kwargs,
+        }
+    ).encode()
+
+    size = str(len(payload)).encode()
+    client.sendall(size + b"\n")
+    client.sendall(payload)
     resp = client.recv(1048576)
     client.close()
-    return json.loads(resp.decode())
+    result = json.loads(resp.decode())
+
+    duration = (dt.now() - start).total_seconds()
+    print(f"IPC call took {duration}s")
+    return result
 
 
 ## SERVER CODE
@@ -67,12 +76,24 @@ def call_via_dbserver(func: Callable, *args, **kwargs):
 
 class DbServerRequestHandler(BaseRequestHandler):
     def handle(self):
-        bytedata = self.request.recv(1048576)
+        header = self.request.recv(4096)
+
+        size_end_index = header.find(b"\n")
+        size = int(header[:size_end_index])
+        bytedata = header[size_end_index + 1 :]
+
+        while len(bytedata) < size:
+            bytedata += self.request.recv(1048576)
+
+        assert len(bytedata) == size
+
+        print(f"Received size: {size}")
+
         data = json.loads(bytedata)
 
         func_module = data["func_module"]
         func_name = data["func_name"]
-        print(f"Received function call: {func_module}.{func_name}")
+        print(f"Function call: {func_module}.{func_name}")
         func = getattr(import_module(func_module), func_name)
         args = data["args"]
         kwargs = data["kwargs"]
