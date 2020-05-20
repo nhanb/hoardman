@@ -32,7 +32,7 @@ def _get(conn: sqlite3.Connection, queue_name: str, pid):
         FROM queue
         WHERE name = ?
           AND pid IS NULL
-        ORDER BY created_at
+        ORDER BY id
         LIMIT 1;
         """,
             (queue_name,),
