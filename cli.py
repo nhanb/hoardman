@@ -11,10 +11,10 @@ def main():
         from mangadex import fetch_worker
 
         fetch_worker()
-    elif action == "initdb":
-        from persistence import initdb, get_conn
+    elif action == "migrate":
+        from persistence import migrate
 
-        initdb(get_conn())
+        migrate()
     elif action == "putjobs":
         from mangadex import put_fetch_jobs
 
