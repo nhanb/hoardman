@@ -42,9 +42,8 @@ def id_to_url(manga_id):
 
 
 def put_fetch_jobs(min_id, max_id):
-    for chunk in chunks(range(min_id, max_id + 1), 10_000):
-        payloads = ({"url": id_to_url(id_)} for id_ in chunk)
-        jobqueue.put_bulk("fetch", payloads)
+    payloads = [{"url": id_to_url(id_)} for id_ in range(min_id, max_id + 1)]
+    jobqueue.put_bulk("fetch", payloads)
 
 
 def fetch_worker():
@@ -60,10 +59,6 @@ def fetch_worker():
         else:
             print("No pending job found.")
             time.sleep(5)
-
-
-def chunks(seq, size):
-    return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
 
 if __name__ == "__main__":
