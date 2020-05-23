@@ -23,13 +23,13 @@ insert_fetch_result = via_dbserver(_insert_fetch_result)
 def fetch(url):
     status_code = -1
     total_start = dt.now()
-    while status_code != 200:
+    while status_code not in (200, 404):
         start = dt.now()
         resp = httpclient.proxied_get(url, timeout=100)
         duration = (dt.now() - start).total_seconds()
         print(f"Request time: {duration}s")
         status_code = resp.status_code
-    assert resp.status_code == 200, f"{url} failed: {resp.status_code}"
+    assert resp.status_code in (200, 404), f"{url} failed: {resp.status_code}"
     total_duration = (dt.now() - total_start).total_seconds()
     print(f"Request time (total): {total_duration}s")
 
@@ -41,8 +41,12 @@ def id_to_url(manga_id):
     return f"https://mangadex.org/title/{manga_id}/"
 
 
-def put_fetch_jobs(min_id, max_id):
-    payloads = [{"url": id_to_url(id_)} for id_ in range(min_id, max_id + 1)]
+def id_to_api_url(manga_id):
+    return f"https://mangadex.org/api/?type=manga&id={manga_id}"
+
+
+def put_fetch_jobs(min_id, max_id, id_to_url_func=id_to_url):
+    payloads = [{"url": id_to_url_func(id_)} for id_ in range(min_id, max_id + 1)]
     jobqueue.put_bulk("fetch", payloads)
 
 
